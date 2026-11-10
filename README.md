@@ -381,13 +381,14 @@ Once configured, use natural language commands in Claude Desktop or Claude Code:
 | Generate mind map | "Create a mind map for notebook abc456" |
 | Create quiz | "Generate a quiz based on my notebook sources" |
 | Make flashcards | "Create study flashcards from this notebook" |
-| 정리 노트 | "이 노트북 정리해줘", "21장만 정리해줘" |
 
-### 정리 명령어
+### 정리 명령어 (NotebookLM 없이)
 
-"정리해줘"라고 하면 `generate_study_notes`가 강의 슬라이드 정리본 스타일의 노트를 만듭니다:
-표지(과목·장 제목) → 학습 목표 → 슬라이드 순서 섹션(개조식, `→ ↑ ↓` 기전 표기, `기전/약제/효과/부작용/비고` 표와 비교표) → 임상 적용·간호 → 환자 교육 → 핵심용어.
-자세한 형식은 [SKILL.md](SKILL.md#정리-명령어-study-notes)를 참고하세요.
+강의 자료(PDF·PPT·Word·이미지)를 주고 "정리해줘"라고 하면 Claude가 직접 강의 슬라이드 정리본 형식으로 만들어 줍니다. NotebookLM 로그인이 필요 없습니다.
+
+- 구성: 표지(과목·장 제목) → 학습 목표 → 슬라이드 순서 섹션(개조식, `→ ↑ ↓` 기전 표기, `기전/약제/효과/부작용/비고` 표와 비교표) → 임상 적용·간호 → 환자 교육 → 핵심용어
+- 형식 정의: [.claude/skills/study-notes/SKILL.md](.claude/skills/study-notes/SKILL.md)
+- 이 폴더에서 Claude Code를 실행하면 스킬이 자동으로 잡힙니다. Claude 앱(Desktop·웹)에서는 이 폴더(`study-notes`)를 zip으로 묶어 Claude 설정의 스킬 메뉴에서 업로드하면 됩니다.
 
 ---
 
@@ -409,7 +410,6 @@ Once configured, use natural language commands in Claude Desktop or Claude Code:
 | `generate_quiz` | Generate quiz questions |
 | `generate_flashcards` | Generate study flashcards |
 | `generate_summary_report` | Generate a briefing document |
-| `generate_study_notes` | "정리" – lecture-style study notes (Korean by default) |
 | `generate_data_table` | Extract data into a table |
 
 ---
