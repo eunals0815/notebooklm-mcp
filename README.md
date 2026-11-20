@@ -97,8 +97,7 @@ uv run python -c "
 from notebooklm import NotebookLMClient
 import asyncio
 async def test():
-    client = await NotebookLMClient.from_storage()
-    async with client:
+    async with NotebookLMClient.from_storage() as client:
         notebooks = await client.notebooks.list()
         print(f'Authenticated! Found {len(notebooks)} notebooks.')
 asyncio.run(test())

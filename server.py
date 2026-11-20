@@ -14,29 +14,24 @@ logger = logging.getLogger(__name__)
 
 # Client instance (singleton for the session)
 _client = None
-_client_context = None
 
 @asynccontextmanager
 async def lifespan(_app):
     """Initialize NotebookLM client on server startup."""
-    global _client, _client_context
+    global _client
     logger.info("Starting NotebookLM MCP server...")
     try:
-        _client = await NotebookLMClient.from_storage()
-        _client_context = await _client.__aenter__()
-        logger.info("NotebookLM client initialized successfully")
-        yield
+        async with NotebookLMClient.from_storage() as client:
+            _client = client
+            logger.info("NotebookLM client initialized successfully")
+            yield
+        logger.info("NotebookLM client closed")
     except Exception as e:
-        logger.error(f"Failed to initialize NotebookLM client: {e}")
-        logger.error("Please run 'uv run notebooklm login' to authenticate.")
+        logger.error(f"NotebookLM client error: {e}")
+        logger.error("If this is an authentication error, run 'uv run notebooklm login'.")
         raise
     finally:
-        if _client:
-            try:
-                await _client.__aexit__(None, None, None)
-                logger.info("NotebookLM client closed")
-            except Exception as e:
-                logger.error(f"Error closing client: {e}")
+        _client = None
 
 # Initialize FastMCP server with lifespan
 mcp = FastMCP("NotebookLM", lifespan=lifespan)
@@ -52,7 +47,7 @@ async def list_notebooks():
     """List all notebooks in your NotebookLM account."""
     client = await get_client()
     notebooks = await client.notebooks.list()
-    return [{"id": nb.id, "title": nb.title, "source_count": nb.source_count} for nb in notebooks]
+    return [{"id": nb.id, "title": nb.title, "source_count": nb.sources_count} for nb in notebooks]
 
 @mcp.tool()
 async def create_notebook(title: str):
@@ -80,7 +75,13 @@ async def ask_notebook(notebook_id: str, question: str):
     """Ask a question based on the sources in a specific notebook."""
     client = await get_client()
     result = await client.chat.ask(notebook_id, question)
-    return {"answer": result.text, "sources": [s.title for s in result.sources]}
+    return {
+        "answer": result.answer,
+        "references": [
+            {"citation": r.citation_number, "source_id": r.source_id, "cited_text": r.cited_text}
+            for r in result.references
+        ],
+    }
 
 @mcp.tool()
 async def get_notebook_summary(notebook_id: str):
@@ -88,7 +89,7 @@ async def get_notebook_summary(notebook_id: str):
     client = await get_client()
     # Using chat to get summary if there's no direct summary API
     result = await client.chat.ask(notebook_id, "Please provide a comprehensive summary and key insights of this notebook.")
-    return {"summary": result.text}
+    return {"summary": result.answer}
 
 @mcp.tool()
 async def generate_video_overview(notebook_id: str, instructions: str = "Create an engaging video overview of these sources."):
@@ -125,7 +126,7 @@ async def generate_mind_map(notebook_id: str):
     """
     client = await get_client()
     result = await client.artifacts.generate_mind_map(notebook_id)
-    return {"note_id": result.get("note_id"), "status": "Mind map generated and saved to notes."}
+    return {"note_id": result.note_id, "status": "Mind map generated and saved to notes."}
 
 @mcp.tool()
 async def generate_infographic(notebook_id: str, instructions: str = "Create an informative infographic."):
